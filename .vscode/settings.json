@@ -1,0 +1,13 @@
+{
+  "files.associations": {
+    "*.cu": "cpp",
+    "ostream": "cpp",
+    "iostream": "cpp",
+    "new": "cpp",
+    "*.tcc": "cpp",
+    "algorithm": "cpp",
+    "iterator": "cpp",
+    "random": "cpp",
+    "functional": "cpp"
+  }
+}
