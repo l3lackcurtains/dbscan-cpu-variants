@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <algorithm>
 
 #define DATASET_SIZE 100
 #define ELIPSON 10
@@ -8,42 +9,50 @@
 
 using namespace std;
 
+struct Point { 
+    int id, x, y;
+};
+
+struct Cluster {
+    int id;
+    vector<int> data;
+};
 
 class DBSCAN {
     private:
-        int dataset[DATASET_SIZE][2];
+        Point dataset[DATASET_SIZE];
         int elipson;
         int minPoints;
-        int cluster = 0;
-        vector<vector<int*>> clusters;
+        vector<Cluster> clusters;
+        int clusterCount;
         int visited[DATASET_SIZE];
-        int noises[DATASET_SIZE];
-        int neighborSize = 0;
-        int getDistance(int* center, int* point);
+        vector<int> noises;
+        int getDistance(int center, int neighbor);
 
     public:
-        DBSCAN(int dataset[DATASET_SIZE][2]);
+        DBSCAN(Point dataset[DATASET_SIZE]);
         void run();
-        int **findNeighbors(int pos);
-        void expandCluster(int pointId, int **neighbors);
+        vector<int> findNeighbors(int pos);
+        void expandCluster(int pointId, vector<int> &neighbors);
         void results();
 };
 
 int main(int, char **) {
 
     // Generate random datasets
-    int dataset[DATASET_SIZE][2];
+    Point dataset[DATASET_SIZE]; 
 
     for(int i = 0; i < DATASET_SIZE; i++) {
-        int x = rand() % 100;
-        int y = rand() % 100;
-
-        dataset[i][0] = x;
-        dataset[i][1] = y;
+        int x = rand() % 50;
+        int y = rand() % 50;
+        dataset[i].id = i;
+        dataset[i].x = x;
+        dataset[i].y = y;
     }
-    printf("Random Dataset created \n ############################### \n");
+    
+    printf("Random Dataset created \n###############################\n");
     for(int i = 0; i < DATASET_SIZE; i++) {
-        printf("\n%d: [%d, %d] \n", i, dataset[i][0], dataset[i][1]);
+        printf("\n%d: [%d, %d] \n", i, dataset[i].x, dataset[i].y);
     }
     printf("############################### \n");
 
@@ -56,111 +65,127 @@ int main(int, char **) {
     return 0;
 }
 
-DBSCAN::DBSCAN(int loadData[DATASET_SIZE][2]) {
+DBSCAN::DBSCAN(Point loadData[DATASET_SIZE]) {
     elipson = ELIPSON;
     minPoints = MIN_POINTS;
 
     for(int i = 0; i < DATASET_SIZE; i++) {
-        dataset[i][0] = loadData[i][0];
-        dataset[i][1] = loadData[i][1];
+        dataset[i].x = loadData[i].x;
+        dataset[i].y = loadData[i].y;
+        dataset[i].id = loadData[i].id;
+        visited[i] = 0;
     }
 }
 
-int DBSCAN::getDistance(int* center, int* point) {
-    int dist = pow(center[0] - point[0], 2) + pow(center[1] - point[1], 2);
+int DBSCAN::getDistance(int center, int neighbor) {
+    int dist = pow(dataset[center].x - dataset[neighbor].x, 2) + pow(dataset[center].y - dataset[neighbor].y, 2);
     return sqrt(dist);
 }
 
 void DBSCAN::run() {
-    
-    int noiseCount = 0;
-    int** neighbors;
+    vector<int> neighbors;
+    clusterCount = 0;
 
     for (int i = 0; i < DATASET_SIZE; i++) {
-        visited[i] = 1;
+        if(visited[i] == 0) {
+            visited[i] = 1;
 
-        neighbors = findNeighbors(i);
+            neighbors = findNeighbors(i);
+            
+            if (neighbors.size() < minPoints) {
+                
+                clusters[clusterCount].id = clusterCount;
+                clusters[clusterCount].data.push_back(i);
 
-        if (neighborSize < minPoints) {
-            noises[noiseCount] = i;
-            noiseCount++;
-        } else {
-            expandCluster(i, neighbors);
-            cluster++;
-        } 
+            } else {
+
+                clusterCount++;
+
+                Cluster cluster;
+                cluster.id = clusterCount;
+                cluster.data = {};
+
+                clusters.push_back(cluster);
+                
+                expandCluster(i, neighbors);
+                
+            }
+        }
     }
+
+    
 }
 
 void DBSCAN::results() {
-    for(int i = 0; i < cluster;  i++) {
-        cout<<"["<<clusters[i][0]<<","<<clusters[i][1]<<"]"<<endl;
+    for(int j = 0; j < clusters.size(); j++) {
+        printf("Data for cluster %d \n", j);
+        for(int k = 0; k < clusters[j].data.size(); k++) {
+            printf("Point [%d, %d] \n", dataset[clusters[j].data[k]].x, dataset[clusters[j].data[k]].y);
+        }
     }
 }
 
-int** DBSCAN::findNeighbors(int pos) {
+vector<int> DBSCAN::findNeighbors(int pos) {
 
-    int** neighbors = new int*[DATASET_SIZE];
-
-    int point[2];
-
-    point[0] = dataset[pos][0];
-    point[1] = dataset[pos][1];
+    vector<int> neighbors;
 
     int neighborCount = 0;
     
     for (int x = 0; x < DATASET_SIZE; x++) {
-        int distance = getDistance(point, dataset[x]);
+        int distance = getDistance(pos, x);
 
-        if (distance < elipson)
-        {
-            neighbors[neighborCount] = new int[2];
-            
-            neighbors[neighborCount][0] = dataset[x][0];
-            neighbors[neighborCount][1] = dataset[x][1];
-
-            neighborCount++;
+        if (distance < elipson) {
+            neighbors.push_back(x);
         }
     }
 
     
-    printf("Neighbor of dataset [%d, %d]", point[0], point[1]);
+    printf("Neighbor of dataset [%d, %d]", dataset[pos].x, dataset[pos].y);
 
-    for(int i = 0; i < neighborCount; i++) {
-        printf("\n%d: [%d, %d] \n", i, neighbors[i][0], neighbors[i][1]); 
+    for(int i = 0; i < neighbors.size(); i++) {
+        printf("\n%d: [%d, %d] \n", neighbors[i], dataset[neighbors[i]].x, dataset[neighbors[i]].y ); 
     }
-
-    neighborSize = neighborCount;
+    
 
     return neighbors;
 }
 
-void DBSCAN::expandCluster(int pointId, int **neighbors) {
-    clusters[cluster].push_back(dataset[pointId]);
+void DBSCAN::expandCluster(int pointId, vector<int> &neighbors) {
 
-    cout<<clusters[cluster][0]<<endl;
+    
 
-    int** moreNeighbors;
+    clusters[clusterCount].data.push_back(pointId);
 
-    int currentNeighborSize = neighborSize;
+    for(int b = 0; b < clusters.size(); b++) {
+        cout<<clusters[b].data.size()<<endl;
+    }
 
-    for(int i = 0; i < currentNeighborSize; i++) {
-        if (visited[pointId] != 1) {
-            visited[pointId] = 1;
+    cout<<"here!"<<endl;
 
-            moreNeighbors = findNeighbors(pointId);
-            
-            int moreNeighborSize = neighborSize;
+    vector<int> moreNeighbors;
+    
+    for(int i = 0; i < neighbors.size(); i++) {
+        if (visited[i] == 0) {
+            visited[i] = 1;
+
+            moreNeighbors = findNeighbors(i);
+            int moreNeighborSize = moreNeighbors.size();
 
             if(moreNeighborSize >= minPoints) {
 
-                for(int x = currentNeighborSize; x < currentNeighborSize + moreNeighborSize; x++) {
-                    neighbors[x] = moreNeighbors[x - currentNeighborSize];
+                for(int x = 0; x < moreNeighborSize; x++) {                    
+                    neighbors.push_back(moreNeighbors[x]);
                 }
             }
 
+            for(int x = 0; x < clusterCount; x++) {
+                for(int y = 0; y < clusters[x].data.size(); y++) {
+                    
+                    if(clusters[x].data[y] != i) { 
+                        clusters[clusterCount].data.push_back(i);
+                    }
+                } 
+            }
         }
     }
-
-    neighborSize = currentNeighborSize;
-
 }
