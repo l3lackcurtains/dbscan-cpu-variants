@@ -8,6 +8,10 @@
     "algorithm": "cpp",
     "iterator": "cpp",
     "random": "cpp",
-    "functional": "cpp"
-  }
+    "functional": "cpp",
+    "deque": "cpp",
+    "string": "cpp",
+    "vector": "cpp"
+  },
+  "C_Cpp.errorSquiggles": "Disabled"
 }
