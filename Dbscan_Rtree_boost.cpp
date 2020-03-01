@@ -51,6 +51,7 @@ class DBSCAN {
 };
 
 int main(int, char **) {
+
   // Generate random datasets
   Point dataset[DATASET_SIZE];
 
@@ -61,7 +62,8 @@ int main(int, char **) {
     dataset[i].y = y;
   }
 
-  printf("Random Dataset created \n ############################### \n");
+  printf("Random Dataset created\n");
+  printf("###############################\n");
 
   // Print dataset in an array structure
   printf("[");
@@ -70,7 +72,7 @@ int main(int, char **) {
   }
   printf("]\n");
 
-  printf("############################### \n");
+  printf("###############################\n");
 
   // Initialize DBSCAN with dataset
   DBSCAN dbscan(dataset);
@@ -82,9 +84,11 @@ int main(int, char **) {
   dbscan.results();
 
   return 0;
+  
 }
 
 DBSCAN::DBSCAN(Point loadData[DATASET_SIZE]) {
+
   elipson = ELIPSON;
   minPoints = MIN_POINTS;
 
@@ -101,16 +105,19 @@ DBSCAN::DBSCAN(Point loadData[DATASET_SIZE]) {
           dataPoint(dataset[i].x, dataset[i].y));
     // insert points to the rtree
     rtree.insert(std::make_pair(b, i));
+    
   }
 }
 
 int DBSCAN::getDistance(int center, int neighbor) {
+
   int dist = (dataset[center].x - dataset[neighbor].x) *
                  (dataset[center].x - dataset[neighbor].x) +
              (dataset[center].y - dataset[neighbor].y) *
                  (dataset[center].y - dataset[neighbor].y);
 
   return sqrt(dist);
+
 }
 
 void DBSCAN::run() {
@@ -200,33 +207,39 @@ void DBSCAN::run() {
 
 void DBSCAN::results() {
   for (int j = 0; j < clusters.size(); j++) {
+
     printf("Data for cluster %d \n", j);
     printf("[\n");
+
     for (int k = 0; k < clusters[j].data.size(); k++) {
       printf("  [%d, %d]\n", dataset[clusters[j].data[k]].x,
              dataset[clusters[j].data[k]].y);
     }
+
     printf("\n]\n");
+
   }
 }
 
 vector<int> DBSCAN::findNeighbors(int pos) {
-  vector<int> neighbors;
 
-  // Find the intersection box for the given point
+  vector<int> neighbors;
   Point point = dataset[pos];
   vector<value> result_n;
+
+  // Create a search box for the given poiny
   box searchBox(dataPoint(point.x - ELIPSON, point.y - ELIPSON),
                 dataPoint(point.x + ELIPSON, point.y + ELIPSON));
 
+  // Query the intersection of search box on Rtree
   rtree.query(bgi::intersects(searchBox), std::back_inserter(result_n));
 
+  // collect the points of box
   vector<int> pointsInBox = {};
-
   for (value pair : result_n) pointsInBox.push_back(pair.second);
 
+  // Compute the distance only with points in a box
   for (int x = 0; x < pointsInBox.size(); x++) {
-
     // Compute neighbor points
     int distance = getDistance(pos, pointsInBox[x]);
     if (distance <= elipson && pos != pointsInBox[x]) {
@@ -235,4 +248,5 @@ vector<int> DBSCAN::findNeighbors(int pos) {
   }
 
   return neighbors;
+
 }
