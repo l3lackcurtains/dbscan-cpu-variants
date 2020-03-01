@@ -3,6 +3,11 @@
 #include <iostream>
 #include <vector>
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/geometries/point.hpp>
+#include <boost/geometry/index/rtree.hpp>
+
 #define DATASET_SIZE 500
 #define ELIPSON 20
 #define MIN_POINTS 10
@@ -18,6 +23,13 @@ struct Cluster {
   vector<int> data;
 };
 
+namespace bg = boost::geometry;
+namespace bgi = boost::geometry::index;
+
+typedef bg::model::point<float, 2, bg::cs::cartesian> dataPoint;
+typedef bg::model::box<dataPoint> box;
+typedef std::pair<box, int> value;
+
 class DBSCAN {
  private:
   Point dataset[DATASET_SIZE];
@@ -30,6 +42,7 @@ class DBSCAN {
   int getDistance(int center, int neighbor);
   vector<int> findNeighbors(int pos);
   void expandCluster(int pointId, vector<int> &neighbors);
+  bgi::rtree<value, bgi::quadratic<4>> rtree;
 
  public:
   DBSCAN(Point dataset[DATASET_SIZE]);
@@ -79,6 +92,15 @@ DBSCAN::DBSCAN(Point loadData[DATASET_SIZE]) {
     dataset[i].x = loadData[i].x;
     dataset[i].y = loadData[i].y;
     visited[i] = 0;
+  }
+
+  // Create an Rtree of the dataset
+  for (int i = 0; i < DATASET_SIZE; i++) {
+    // create a box for each points
+    box b(dataPoint(dataset[i].x, dataset[i].y),
+          dataPoint(dataset[i].x, dataset[i].y));
+    // insert points to the rtree
+    rtree.insert(std::make_pair(b, i));
   }
 }
 
@@ -184,17 +206,30 @@ void DBSCAN::results() {
       printf("  [%d, %d]\n", dataset[clusters[j].data[k]].x,
              dataset[clusters[j].data[k]].y);
     }
-    printf("]\n");
+    printf("\n]\n");
   }
 }
 
 vector<int> DBSCAN::findNeighbors(int pos) {
   vector<int> neighbors;
 
-  for (int x = 0; x < DATASET_SIZE; x++) {
-    // Compute neighbor points of a point at position "pos"
-    int distance = getDistance(pos, x);
-    if (distance <= elipson && pos != x) {
+  // Find the intersection box for the given point
+  Point point = dataset[pos];
+  vector<value> result_n;
+  box searchBox(dataPoint(point.x - ELIPSON, point.y - ELIPSON),
+                dataPoint(point.x + ELIPSON, point.y + ELIPSON));
+
+  rtree.query(bgi::intersects(searchBox), std::back_inserter(result_n));
+
+  vector<int> pointsInBox = {};
+
+  for (value pair : result_n) pointsInBox.push_back(pair.second);
+
+  for (int x = 0; x < pointsInBox.size(); x++) {
+
+    // Compute neighbor points
+    int distance = getDistance(pos, pointsInBox[x]);
+    if (distance <= elipson && pos != pointsInBox[x]) {
       neighbors.push_back(x);
     }
   }
