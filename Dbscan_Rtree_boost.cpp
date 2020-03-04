@@ -243,7 +243,7 @@ vector<int> DBSCAN::findNeighbors(int pos) {
     // Compute neighbor points
     int distance = getDistance(pos, pointsInBox[x]);
     if (distance <= elipson && pos != pointsInBox[x]) {
-      neighbors.push_back(x);
+      neighbors.push_back(pointsInBox[x]);
     }
   }
 

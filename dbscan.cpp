@@ -4,7 +4,7 @@
 #include <vector>
 
 #define DATASET_SIZE 500
-#define ELIPSON 20
+#define ELIPSON 30
 #define MIN_POINTS 10
 
 using namespace std;

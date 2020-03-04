@@ -26,7 +26,6 @@ struct Rect {
   Rect(int a_minX, int a_minY, int a_maxX, int a_maxY) {
     min[0] = a_minX;
     min[1] = a_minY;
-
     max[0] = a_maxX;
     max[1] = a_maxY;
   }
@@ -55,8 +54,7 @@ class DBSCAN {
   RTree<int, int, 2, float> tree;
   int getDistance(int center, int neighbor);
   vector<int> findNeighbors(int pos);
-  void expandCluster(int pointId, vector<int> &neighbors);
-  
+  void expandCluster(int pointId, vector<int>& neighbors);
 
  public:
   DBSCAN(Point dataset[DATASET_SIZE]);
@@ -64,30 +62,29 @@ class DBSCAN {
   void results();
 };
 
-int main(int, char **) {
+int main(int, char**) {
   // Generate random datasets
   Point dataset[DATASET_SIZE];
 
   // Import Dataset
   ifstream file("./dataset.txt");
   if (file.is_open()) {
-      string token;
-      int count = 0;
-      while (getline(file, token)) {
-          char* x = (char*)token.c_str();
-          char* field = strtok(x, ",");
-          int tmp;
-          sscanf(field,"%d",&tmp);
-          
-          dataset[count].x = tmp;
+    string token;
+    int count = 0;
+    while (getline(file, token)) {
+      char* x = (char*)token.c_str();
+      char* field = strtok(x, ",");
+      int tmp;
+      sscanf(field, "%d", &tmp);
+      dataset[count].x = tmp;
+      
+      field = strtok(NULL, ",");
+      sscanf(field, "%d", &tmp);
+      dataset[count].y = tmp;
 
-          field = strtok(NULL, ",");
-          sscanf(field,"%d",&tmp);
-          dataset[count].y = tmp;
-          
-          count++;
-      }
-      file.close();
+      count++;
+    }
+    file.close();
   }
 
   printf("Random Dataset created \n ############################### \n");
@@ -123,7 +120,8 @@ DBSCAN::DBSCAN(Point loadData[DATASET_SIZE]) {
     visited[i] = 0;
 
     // Insert Data into tree
-    Rect rectange = Rect(dataset[i].x, dataset[i].y, dataset[i].x, dataset[i].y);
+    Rect rectange =
+        Rect(dataset[i].x, dataset[i].y, dataset[i].x, dataset[i].y);
     tree.Insert(rectange.min, rectange.max, i);
   }
 }
@@ -167,6 +165,7 @@ void DBSCAN::run() {
 
       // Expand the neighbors of point P
       for (int j = 0; j < neighbors.size(); j++) {
+
         // Mark neighbour as point Q
         int dataIndex = neighbors[j];
 
@@ -179,11 +178,16 @@ void DBSCAN::run() {
         if (visited[dataIndex] == 0) {
           // Mark Q as visited
           visited[dataIndex] = 1;
-
+          
           // Check if point Q already exists in cluster
-          bool notFound = false;
-          for (int l = 0; l < cluster.data.size(); l++) {
-            if (cluster.data[l] != dataIndex) notFound = true;
+          bool notFound = true;
+          for(int i = 0; i < clusters.size(); i++) {
+            for (int l = 0; l < clusters[i].data.size(); l++) {
+              if (clusters[i].data[l] == dataIndex) {
+                notFound = false;
+                break;
+              }
+            }
           }
 
           // If point Q doesn't exist in any cluster, add to current cluster
@@ -204,6 +208,7 @@ void DBSCAN::run() {
               for (int y = 0; y < neighbors.size(); y++) {
                 if (moreNeighbors[x] == neighbors[y]) {
                   doesntExist = false;
+                  break;
                 }
               }
 
@@ -213,9 +218,10 @@ void DBSCAN::run() {
               }
             }
           }
+
+          
         }
       }
-
       // Push cluster into clusters vector
       clusters.push_back(cluster);
     }
@@ -238,18 +244,18 @@ vector<int> DBSCAN::findNeighbors(int pos) {
   vector<int> neighbors;
 
   Rect searchRect = Rect(dataset[pos].x - elipson, dataset[pos].y - elipson,
-                          dataset[pos].x + elipson, dataset[pos].y + elipson);
+                         dataset[pos].x + elipson, dataset[pos].y + elipson);
 
   searchNeighbors.clear();
   tree.Search(searchRect.min, searchRect.max, searchBoxCallback);
+
   for (int x = 0; x < searchNeighbors.size(); x++) {
     // Compute neighbor points of a point at position "pos"
     int distance = getDistance(pos, searchNeighbors[x]);
     if (distance <= elipson && pos != searchNeighbors[x]) {
-      neighbors.push_back(x);
+      neighbors.push_back(searchNeighbors[x]);
     }
   }
-  printf("\n\n");
 
   return neighbors;
 }

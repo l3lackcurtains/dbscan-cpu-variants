@@ -5,7 +5,7 @@
 #include <vector>
 
 #define DATASET_SIZE 500
-#define ELIPSON 20
+#define ELIPSON 30
 #define MIN_POINTS 10
 
 using namespace std;
@@ -218,7 +218,7 @@ vector<int> DBSCAN::findNeighbors(int pos) {
   vector<int> neighbors;
 
   Rect searchRect = Rect(dataset[pos].x - elipson, dataset[pos].y - elipson,
-                          dataset[pos].x + elipson, dataset[pos].y + elipson);
+                         dataset[pos].x + elipson, dataset[pos].y + elipson);
 
   searchNeighbors.clear();
   tree.Search(searchRect.min, searchRect.max, searchBoxCallback);
@@ -227,7 +227,7 @@ vector<int> DBSCAN::findNeighbors(int pos) {
     // Compute neighbor points of a point at position "pos"
     int distance = getDistance(pos, searchNeighbors[x]);
     if (distance <= elipson && pos != searchNeighbors[x]) {
-      neighbors.push_back(x);
+      neighbors.push_back(searchNeighbors[x]);
     }
   }
 
