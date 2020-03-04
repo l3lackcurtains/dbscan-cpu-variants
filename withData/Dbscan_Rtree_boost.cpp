@@ -2,15 +2,20 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fstream>
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
-#define DATASET_SIZE 500
-#define ELIPSON 30
-#define MIN_POINTS 10
+#define DATASET_SIZE 25
+#define ELIPSON 10
+#define MIN_POINTS 5
 
 using namespace std;
 
@@ -55,11 +60,26 @@ int main(int, char **) {
   // Generate random datasets
   Point dataset[DATASET_SIZE];
 
-  for (int i = 0; i < DATASET_SIZE; i++) {
-    int x = rand() % 50;
-    int y = rand() % 50;
-    dataset[i].x = x;
-    dataset[i].y = y;
+  // Import Dataset
+  ifstream file("./dataset.txt");
+  if (file.is_open()) {
+      string token;
+      int count = 0;
+      while (getline(file, token)) {
+          char* x = (char*)token.c_str();
+          char* field = strtok(x, ",");
+          int tmp;
+          sscanf(field,"%d",&tmp);
+          
+          dataset[count].x = tmp;
+
+          field = strtok(NULL, ",");
+          sscanf(field,"%d",&tmp);
+          dataset[count].y = tmp;
+          
+          count++;
+      }
+      file.close();
   }
 
   printf("Random Dataset created\n");
