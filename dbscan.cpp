@@ -121,6 +121,7 @@ void DBSCAN::run() {
 
       // Expand the neighbors of point P
       for (int j = 0; j < neighbors.size(); j++) {
+
         // Mark neighbour as point Q
         int dataIndex = neighbors[j];
 
@@ -133,11 +134,16 @@ void DBSCAN::run() {
         if (visited[dataIndex] == 0) {
           // Mark Q as visited
           visited[dataIndex] = 1;
-
+          
           // Check if point Q already exists in cluster
-          bool notFound = false;
-          for (int l = 0; l < cluster.data.size(); l++) {
-            if (cluster.data[l] != dataIndex) notFound = true;
+          bool notFound = true;
+          for(int i = 0; i < clusters.size(); i++) {
+            for (int l = 0; l < clusters[i].data.size(); l++) {
+              if (clusters[i].data[l] == dataIndex) {
+                notFound = false;
+                break;
+              }
+            }
           }
 
           // If point Q doesn't exist in any cluster, add to current cluster
@@ -158,6 +164,7 @@ void DBSCAN::run() {
               for (int y = 0; y < neighbors.size(); y++) {
                 if (moreNeighbors[x] == neighbors[y]) {
                   doesntExist = false;
+                  break;
                 }
               }
 
@@ -167,9 +174,9 @@ void DBSCAN::run() {
               }
             }
           }
+
         }
       }
-
       // Push cluster into clusters vector
       clusters.push_back(cluster);
     }

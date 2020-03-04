@@ -130,61 +130,76 @@ void DBSCAN::run() {
       // Mark noise points
       if (neighbors.size() < minPoints) {
         noises.push_back(i);
-      } else {
-        // Increment cluster and initialize it will the current point
-        clusterCount++;
-        Cluster cluster;
-        cluster.id = clusterCount;
-        cluster.data.push_back(i);
+      }
 
-        // Expand the neighbors of point P
-        for (int j = 0; j < neighbors.size(); j++) {
-          // Mark neighbour as point Q
-          int dataIndex = neighbors[j];
+      // Increment cluster and initialize it will the current point
+      clusterCount++;
 
-          // Continue when Q is not visited
-          if (visited[dataIndex] == 0) {
-            // Mark Q as visited
-            visited[dataIndex] = 1;
+      Cluster cluster;
+      cluster.id = clusterCount;
+      cluster.data.push_back(i);
 
-            // Expand more neighbors of point Q
-            vector<int> moreNeighbors;
-            moreNeighbors = findNeighbors(dataIndex);
+      // Expand the neighbors of point P
+      for (int j = 0; j < neighbors.size(); j++) {
 
-            // Continue when neighbors point is higher than minPoint threshold
-            if (moreNeighbors.size() >= minPoints) {
-              // Check if neighbour of Q already exists in neighbour of P
-              bool doesntExist = true;
-              for (int x = 0; x < moreNeighbors.size(); x++) {
-                for (int y = 0; y < neighbors.size(); y++) {
-                  if (moreNeighbors[x] != neighbors[y]) {
-                    doesntExist = false;
-                  }
-                }
+        // Mark neighbour as point Q
+        int dataIndex = neighbors[j];
 
-                // If neighbour doesn't exist, add to neighbor list
-                if (doesntExist) {
-                  neighbors.push_back(moreNeighbors[x]);
-                }
-              }
-            }
-          }
+        // If point is a noise push to the cluster
+        for (int k = 0; k < noises.size(); k++) {
+          if (noises[k] == dataIndex) cluster.data.push_back(dataIndex);
+        }
 
+        // Continue when Q is not visited
+        if (visited[dataIndex] == 0) {
+          // Mark Q as visited
+          visited[dataIndex] = 1;
+          
           // Check if point Q already exists in cluster
           bool notFound = true;
           for(int i = 0; i < clusters.size(); i++) {
             for (int l = 0; l < clusters[i].data.size(); l++) {
-              if (clusters[i].data[l] == dataIndex) notFound = false;
+              if (clusters[i].data[l] == dataIndex) {
+                notFound = false;
+                break;
+              }
             }
           }
+
           // If point Q doesn't exist in any cluster, add to current cluster
           if (notFound) {
             cluster.data.push_back(dataIndex);
           }
+
+          // Expand more neighbors of point Q
+          vector<int> moreNeighbors;
+          moreNeighbors = findNeighbors(dataIndex);
+
+          // Continue when neighbors point is higher than minPoint threshold
+
+          if (moreNeighbors.size() >= minPoints) {
+            // Check if neighbour of Q already exists in neighbour of P
+            bool doesntExist = true;
+            for (int x = 0; x < moreNeighbors.size(); x++) {
+              for (int y = 0; y < neighbors.size(); y++) {
+                if (moreNeighbors[x] == neighbors[y]) {
+                  doesntExist = false;
+                  break;
+                }
+              }
+
+              // If neighbour doesn't exist, add to neighbor list
+              if (doesntExist) {
+                neighbors.push_back(moreNeighbors[x]);
+              }
+            }
+          }
+
+          
         }
-        // Push cluster into clusters vector
-        clusters.push_back(cluster);
       }
+      // Push cluster into clusters vector
+      clusters.push_back(cluster);
     }
   }
 }
