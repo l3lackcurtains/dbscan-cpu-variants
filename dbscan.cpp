@@ -110,6 +110,7 @@ void DBSCAN::run() {
       // Mark noise points
       if (neighbors.size() < minPoints) {
         noises.push_back(i);
+        break;
       }
 
       // Increment cluster and initialize it will the current point
@@ -193,6 +194,12 @@ void DBSCAN::results() {
     }
     printf("]\n");
   }
+  
+  printf("%d Noises: \n[\n", noises.size());
+  for(int i = 0; i < noises.size(); i++) {
+    printf("  [%d %d]\n", dataset[noises[i]].x, dataset[noises[i]].y);
+  }
+  printf("]\n");
 }
 
 vector<int> DBSCAN::findNeighbors(int pos) {
