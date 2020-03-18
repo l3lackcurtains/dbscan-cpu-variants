@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN
 
-data = pd.read_csv('dataset.txt', sep=",", header=None).to_numpy()
+data = pd.read_csv('../dataset/dataset.txt', sep=",", header=None).to_numpy()
 
 X = data[:1000]
 

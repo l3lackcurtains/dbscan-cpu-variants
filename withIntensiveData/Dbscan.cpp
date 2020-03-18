@@ -34,7 +34,7 @@ int main(int, char **) {
   // Generate random datasets
   double dataset[DATASET_SIZE][2];
   // Import Dataset from a file
-  ifstream file("./dataset.txt");
+  ifstream file("../dataset/dataset.txt");
   if (file.is_open()) {
     string token;
     int rowCount = 0;
