@@ -130,8 +130,8 @@ void DBSCAN::run() {
 
             if (moreNeighbors.size() >= minPoints) {
               // Check if neighbour of Q already exists in neighbour of P
-              bool doesntExist = true;
               for (int x = 0; x < moreNeighbors.size(); x++) {
+                bool doesntExist = true;
                 for (int y = 0; y < neighbors.size(); y++) {
                   if (moreNeighbors[x] == neighbors[y]) {
                     doesntExist = false;
