@@ -8,24 +8,14 @@
 #include <string.h>
 #include <fstream>
 
-#define DATASET_SIZE 10
-#define ELIPSON 10
-#define MIN_POINTS 5
+#define DATASET_SIZE 1000
+#define ELIPSON 30
+#define MIN_POINTS 10
 
 using namespace std;
-
-struct Point {
-  double x, y;
-};
-
-struct Cluster {
-  int id;
-  vector<int> data;
-};
-
 class DBSCAN {
  private:
-  Point dataset[DATASET_SIZE];
+  double dataset[DATASET_SIZE][2];
   int elipson;
   int minPoints;
   int cluster;
@@ -35,44 +25,48 @@ class DBSCAN {
   void expandCluster(int pointId, vector<int> &neighbors);
 
  public:
-  DBSCAN(Point dataset[DATASET_SIZE]);
+  DBSCAN(double dataset[DATASET_SIZE][2]);
   void run();
   void results();
 };
 
 int main(int, char **) {
   // Generate random datasets
-  Point dataset[DATASET_SIZE];
-
+  double dataset[DATASET_SIZE][2];
   // Import Dataset from a file
   ifstream file("./dataset.txt");
   if (file.is_open()) {
     string token;
-    int count = 0;
+    int rowCount = 0;
     while (getline(file, token)) {
+      int colCount = 0;
       char* x = (char*)token.c_str();
       char* field = strtok(x, ",");
       double tmp;
       sscanf(field, "%lf", &tmp);
-      dataset[count].x = tmp;
-      
-      field = strtok(NULL, ",");
-      sscanf(field, "%lf", &tmp);
-      dataset[count].y = tmp;
+      dataset[rowCount][colCount] = tmp;
 
-      count++;
+      while (field) {
+        colCount++;
+        field = strtok(NULL, ",");
+        if (field!=NULL) {
+          double tmp;
+          sscanf(field,"%lf",&tmp);
+          dataset[rowCount][colCount] = tmp;
+        }
+      }
+      if(rowCount == DATASET_SIZE) break;
+      rowCount++;
     }
     file.close();
   }
 
-  printf("Random Dataset created \n ############################### \n");
-
   // Print dataset in an array structure
-  printf("[");
+  int count = 0;
   for (int i = 0; i < DATASET_SIZE; i++) {
-    printf("[%lf, %lf], ", dataset[i].x, dataset[i].y);
+    count++;
   }
-  printf("]\n");
+  printf("%d Dataset created\n", count);
 
   printf("############################### \n");
 
@@ -88,23 +82,23 @@ int main(int, char **) {
   return 0;
 }
 
-DBSCAN::DBSCAN(Point loadData[DATASET_SIZE]) {
+DBSCAN::DBSCAN(double loadData[DATASET_SIZE][2]) {
   elipson = ELIPSON;
   minPoints = MIN_POINTS;
   cluster = 0;
 
   for (int i = 0; i < DATASET_SIZE; i++) {
-    dataset[i].x = loadData[i].x;
-    dataset[i].y = loadData[i].y;
+    dataset[i][0] = loadData[i][0];
+    dataset[i][1] = loadData[i][1];
     clusters[i] = 0;
   }
 }
 
 double DBSCAN::getDistance(int center, int neighbor) {
-  double dist = (dataset[center].x - dataset[neighbor].x) *
-                 (dataset[center].x - dataset[neighbor].x) +
-             (dataset[center].y - dataset[neighbor].y) *
-                 (dataset[center].y - dataset[neighbor].y);
+  double dist = (dataset[center][0] - dataset[neighbor][0]) *
+                 (dataset[center][0] - dataset[neighbor][0]) +
+             (dataset[center][1] - dataset[neighbor][1]) *
+                 (dataset[center][1] - dataset[neighbor][1]);
 
   return sqrt(dist);
 }
@@ -172,14 +166,15 @@ void DBSCAN::run() {
 }
 
 void DBSCAN::results() {
+  printf("Number of clusters: %d\n", cluster);
   for(int x = 1; x <= cluster; x++) {
-    printf("CLuster %d: \n[\n", x);
+    int count = 0;
     for(int i = 0; i < DATASET_SIZE; i++) {
       if(clusters[i] == x) {
-        printf("  [%lf, %lf]\n", dataset[i].x, dataset[i].y);
+        count++;
       }
     }
-    printf("]\n");
+    printf("Cluster %d has %d data \n", x, count);
   }
   
 }

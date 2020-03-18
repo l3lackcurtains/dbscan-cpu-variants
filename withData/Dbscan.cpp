@@ -173,7 +173,7 @@ void DBSCAN::run() {
 
 void DBSCAN::results() {
   for(int x = 1; x <= cluster; x++) {
-    printf("CLuster %d: \n[\n", x);
+    printf("Cluster %d: \n[\n", x);
     for(int i = 0; i < DATASET_SIZE; i++) {
       if(clusters[i] == x) {
         printf("  [%d, %d]\n", dataset[i].x, dataset[i].y);
