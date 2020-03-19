@@ -9,30 +9,36 @@
 #include <fstream>
 
 #define DATASET_SIZE 1000
+#define DIMENTION 2
 #define ELIPSON 30
 #define MIN_POINTS 10
 
 using namespace std;
 class DBSCAN {
  private:
-  double dataset[DATASET_SIZE][2];
+  double** dataset;
   int elipson;
   int minPoints;
   int cluster;
-  int clusters[DATASET_SIZE];
+  int* clusters;
   double getDistance(int center, int neighbor);
   vector<int> findNeighbors(int pos);
   void expandCluster(int pointId, vector<int> &neighbors);
 
  public:
-  DBSCAN(double dataset[DATASET_SIZE][2]);
+  DBSCAN(double** loadData);
   void run();
   void results();
 };
 
 int main(int, char **) {
   // Generate random datasets
-  double dataset[DATASET_SIZE][2];
+  double **dataset =
+      (double **)malloc(sizeof(double *) * DATASET_SIZE);
+  for (int i = 0; i < DATASET_SIZE; i++) {
+    dataset[i] = (double *)malloc(sizeof(double) * DIMENTION);
+  }
+
   // Import Dataset from a file
   ifstream file("../dataset/dataset.txt");
   if (file.is_open()) {
@@ -45,7 +51,6 @@ int main(int, char **) {
       double tmp;
       sscanf(field, "%lf", &tmp);
       dataset[rowCount][colCount] = tmp;
-
       while (field) {
         colCount++;
         field = strtok(NULL, ",");
@@ -82,7 +87,16 @@ int main(int, char **) {
   return 0;
 }
 
-DBSCAN::DBSCAN(double loadData[DATASET_SIZE][2]) {
+DBSCAN::DBSCAN(double** loadData) {
+  
+  clusters = (int *)malloc(sizeof(int) * DATASET_SIZE);
+
+  dataset =
+      (double **)malloc(sizeof(double *) * DATASET_SIZE);
+  for (int i = 0; i < DATASET_SIZE; i++) {
+    dataset[i] = (double *)malloc(sizeof(double) * DIMENTION);
+  }
+
   elipson = ELIPSON;
   minPoints = MIN_POINTS;
   cluster = 0;
