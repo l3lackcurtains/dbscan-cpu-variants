@@ -8,10 +8,10 @@
 #include <string.h>
 #include <fstream>
 
-#define DATASET_SIZE 1000
+#define DATASET_SIZE 10000
 #define DIMENTION 2
 #define ELIPSON 30
-#define MIN_POINTS 10
+#define MIN_POINTS 30
 
 using namespace std;
 class DBSCAN {
@@ -52,27 +52,22 @@ int main(int, char **) {
       sscanf(field, "%lf", &tmp);
       dataset[rowCount][colCount] = tmp;
       while (field) {
-        colCount++;
         field = strtok(NULL, ",");
         if (field!=NULL) {
           double tmp;
           sscanf(field,"%lf",&tmp);
           dataset[rowCount][colCount] = tmp;
         }
+        colCount++;
+        if(colCount == DIMENTION) break;
       }
-      if(rowCount == DATASET_SIZE) break;
       rowCount++;
+      if(rowCount == DATASET_SIZE) break;
     }
     file.close();
   }
 
   // Print dataset in an array structure
-  int count = 0;
-  for (int i = 0; i < DATASET_SIZE; i++) {
-    count++;
-  }
-  printf("%d Dataset created\n", count);
-
   printf("############################### \n");
 
   // Initialize DBSCAN with dataset
@@ -181,15 +176,20 @@ void DBSCAN::run() {
 
 void DBSCAN::results() {
   printf("Number of clusters: %d\n", cluster);
+  int noises = 0;
   for(int x = 1; x <= cluster; x++) {
     int count = 0;
     for(int i = 0; i < DATASET_SIZE; i++) {
       if(clusters[i] == x) {
         count++;
       }
+      if(clusters[i] == -1) {
+        noises++;
+      }
     }
-    printf("Cluster %d has %d data \n", x, count);
+    printf("Cluster %d has %d data\n", x, count);
   }
+  printf("Noises: %d\n", noises);
   
 }
 
