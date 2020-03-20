@@ -8,10 +8,10 @@
 #include <string.h>
 #include <fstream>
 
-#define DATASET_SIZE 10000
+#define DATASET_SIZE 1000000
 #define DIMENTION 2
 #define ELIPSON 30
-#define MIN_POINTS 30
+#define MIN_POINTS 10
 
 using namespace std;
 class DBSCAN {
