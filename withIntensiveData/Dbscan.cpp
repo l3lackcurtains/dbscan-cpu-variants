@@ -8,7 +8,7 @@
 #include <string.h>
 #include <fstream>
 
-#define DATASET_SIZE 1000000
+#define DATASET_SIZE 10000
 #define DIMENTION 2
 #define ELIPSON 30
 #define MIN_POINTS 10
@@ -22,8 +22,7 @@ class DBSCAN {
   int cluster;
   int* clusters;
   double getDistance(int center, int neighbor);
-  vector<int> findNeighbors(int pos);
-  void expandCluster(int pointId, vector<int> &neighbors);
+  void findNeighbors(int pos, int* neighbors, int &neighborsSize);
 
  public:
   DBSCAN(double** loadData);
@@ -113,18 +112,17 @@ double DBSCAN::getDistance(int center, int neighbor) {
 }
 
 void DBSCAN::run() {
-  // Neighbors of the point
-  vector<int> neighbors;
 
   for (int i = 0; i < DATASET_SIZE; i++) {
-    
+    int* neighbors = (int*)malloc(sizeof(int) * DATASET_SIZE);
+    int neighborsSize = 0;
     if (clusters[i] == 0) {
 
       // Find neighbors of point P
-      neighbors = findNeighbors(i);
+      findNeighbors(i, neighbors, neighborsSize);
 
       // Mark noise points
-      if (neighbors.size() < minPoints) {
+      if (neighborsSize < minPoints) {
         clusters[i] = -1;
       } else {
         // Increment cluster and initialize it will the current point
@@ -133,7 +131,7 @@ void DBSCAN::run() {
         clusters[i] = cluster; 
 
         // Expand the neighbors of point P
-        for (int j = 0; j < neighbors.size(); j++) {
+        for (int j = 0; j < neighborsSize; j++) {
 
           // Mark neighbour as point Q
           int dataIndex = neighbors[j];
@@ -145,16 +143,16 @@ void DBSCAN::run() {
             clusters[dataIndex] = cluster;
             
             // Expand more neighbors of point Q
-            vector<int> moreNeighbors;
-            moreNeighbors = findNeighbors(dataIndex);
+            int* moreNeighbors = (int*)malloc(sizeof(int) * DATASET_SIZE);
+            int moreNeighbourSize = 0;
+            findNeighbors(dataIndex, moreNeighbors, moreNeighbourSize);
 
             // Continue when neighbors point is higher than minPoint threshold
-
-            if (moreNeighbors.size() >= minPoints) {
+            if (moreNeighbourSize >= minPoints) {
               // Check if neighbour of Q already exists in neighbour of P
-              for (int x = 0; x < moreNeighbors.size(); x++) {
+              for (int x = 0; x < moreNeighbourSize; x++) {
                 bool doesntExist = true;
-                for (int y = 0; y < neighbors.size(); y++) {
+                for (int y = 0; y < neighborsSize; y++) {
                   if (moreNeighbors[x] == neighbors[y]) {
                     doesntExist = false;
                     break;
@@ -163,7 +161,8 @@ void DBSCAN::run() {
 
                 // If neighbour doesn't exist, add to neighbor list
                 if (doesntExist) {
-                  neighbors.push_back(moreNeighbors[x]);
+                  neighbors[neighborsSize] = moreNeighbors[x];
+                  neighborsSize++;
                 }
               }
             }
@@ -193,16 +192,13 @@ void DBSCAN::results() {
   
 }
 
-vector<int> DBSCAN::findNeighbors(int pos) {
-  vector<int> neighbors;
-
+void DBSCAN::findNeighbors(int pos, int* neighbors, int &neighborsSize) {
   for (int x = 0; x < DATASET_SIZE; x++) {
     // Compute neighbor points of a point at position "pos"
     double distance = getDistance(pos, x);
     if (distance < elipson && pos != x) {
-      neighbors.push_back(x);
+      neighbors[neighborsSize] = x;
+      neighborsSize++;
     }
   }
-
-  return neighbors;
 }
