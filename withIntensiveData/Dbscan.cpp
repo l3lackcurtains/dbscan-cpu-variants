@@ -8,7 +8,7 @@
 #include <string.h>
 #include <fstream>
 
-#define DATASET_SIZE 10000
+#define DATASET_SIZE 1000000
 #define DIMENTION 2
 #define ELIPSON 30
 #define MIN_POINTS 10
@@ -51,14 +51,14 @@ int main(int, char **) {
       sscanf(field, "%lf", &tmp);
       dataset[rowCount][colCount] = tmp;
       while (field) {
+        colCount++;
+        if(colCount == DIMENTION) break;
         field = strtok(NULL, ",");
         if (field!=NULL) {
           double tmp;
           sscanf(field,"%lf",&tmp);
           dataset[rowCount][colCount] = tmp;
         }
-        colCount++;
-        if(colCount == DIMENTION) break;
       }
       rowCount++;
       if(rowCount == DATASET_SIZE) break;

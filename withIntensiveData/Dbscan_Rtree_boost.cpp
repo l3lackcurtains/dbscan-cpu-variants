@@ -13,20 +13,12 @@
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
-#define DATASET_SIZE 10
-#define ELIPSON 10
-#define MIN_POINTS 5
+#define DATASET_SIZE 1000000
+#define DIMENTION 2
+#define ELIPSON 30
+#define MIN_POINTS 10
 
 using namespace std;
-
-struct Point {
-  double x, y;
-};
-
-struct Cluster {
-  int id;
-  vector<int> data;
-};
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -37,59 +29,57 @@ typedef std::pair<box, int> value;
 
 class DBSCAN {
  private:
-  Point dataset[DATASET_SIZE];
+  double** dataset;
   int elipson;
   int minPoints;
   int cluster;
-  int clusters[DATASET_SIZE];
+  int* clusters;
   double getDistance(int center, int neighbor);
   vector<int> findNeighbors(int pos);
   void expandCluster(int pointId, vector<int> &neighbors);
   bgi::rtree<value, bgi::quadratic<4>> rtree;
 
  public:
-  DBSCAN(Point dataset[DATASET_SIZE]);
+  DBSCAN(double ** dataset);
   void run();
   void results();
 };
 
 int main(int, char **) {
-
   // Generate random datasets
-  Point dataset[DATASET_SIZE];
+  double **dataset =
+      (double **)malloc(sizeof(double *) * DATASET_SIZE);
+  for (int i = 0; i < DATASET_SIZE; i++) {
+    dataset[i] = (double *)malloc(sizeof(double) * DIMENTION);
+  }
 
   // Import Dataset from a file
-  ifstream file("./dataset.txt");
+  ifstream file("../dataset/dataset.txt");
   if (file.is_open()) {
     string token;
-    int count = 0;
+    int rowCount = 0;
     while (getline(file, token)) {
+      int colCount = 0;
       char* x = (char*)token.c_str();
       char* field = strtok(x, ",");
       double tmp;
       sscanf(field, "%lf", &tmp);
-      dataset[count].x = tmp;
-      
-      field = strtok(NULL, ",");
-      sscanf(field, "%lf", &tmp);
-      dataset[count].y = tmp;
-
-      count++;
+      dataset[rowCount][colCount] = tmp;
+      while (field) {
+        colCount++;
+        if(colCount == DIMENTION) break;
+        field = strtok(NULL, ",");
+        if (field!=NULL) {
+          double tmp;
+          sscanf(field,"%lf",&tmp);
+          dataset[rowCount][colCount] = tmp;
+        }
+      }
+      rowCount++;
+      if(rowCount == DATASET_SIZE) break;
     }
     file.close();
   }
-
-  printf("Random Dataset created\n");
-  printf("###############################\n");
-
-  // Print dataset in an array structure
-  printf("[");
-  for (int i = 0; i < DATASET_SIZE; i++) {
-    printf("[%lf, %lf], ", dataset[i].x, dataset[i].y);
-  }
-  printf("]\n");
-
-  printf("###############################\n");
 
   // Initialize DBSCAN with dataset
   DBSCAN dbscan(dataset);
@@ -101,26 +91,31 @@ int main(int, char **) {
   dbscan.results();
 
   return 0;
-  
 }
 
-DBSCAN::DBSCAN(Point loadData[DATASET_SIZE]) {
+DBSCAN::DBSCAN(double **loadData) {
 
+  dataset =
+      (double **)malloc(sizeof(double *) * DATASET_SIZE);
+  for (int i = 0; i < DATASET_SIZE; i++) {
+    dataset[i] = (double *)malloc(sizeof(double) * DIMENTION);
+  }
+  clusters = (int *)malloc(sizeof(int) * DATASET_SIZE);
   elipson = ELIPSON;
   minPoints = MIN_POINTS;
   cluster = 0;
 
   for (int i = 0; i < DATASET_SIZE; i++) {
-    dataset[i].x = loadData[i].x;
-    dataset[i].y = loadData[i].y;
+    dataset[i][0] = loadData[i][0];
+    dataset[i][1] = loadData[i][1];
     clusters[i] = 0;
   }
 
   // Create an Rtree of the dataset
   for (int i = 0; i < DATASET_SIZE; i++) {
     // create a box for each points
-    box b(dataPoint(dataset[i].x, dataset[i].y),
-          dataPoint(dataset[i].x, dataset[i].y));
+    box b(dataPoint(dataset[i][0], dataset[i][1]),
+          dataPoint(dataset[i][0], dataset[i][1]));
     // insert points to the rtree
     rtree.insert(std::make_pair(b, i));
     
@@ -128,14 +123,12 @@ DBSCAN::DBSCAN(Point loadData[DATASET_SIZE]) {
 }
 
 double DBSCAN::getDistance(int center, int neighbor) {
-
-  double dist = (dataset[center].x - dataset[neighbor].x) *
-                 (dataset[center].x - dataset[neighbor].x) +
-             (dataset[center].y - dataset[neighbor].y) *
-                 (dataset[center].y - dataset[neighbor].y);
+  int dist = (dataset[center][0] - dataset[neighbor][0]) *
+                 (dataset[center][0] - dataset[neighbor][0]) +
+             (dataset[center][1] - dataset[neighbor][1]) *
+                 (dataset[center][1] - dataset[neighbor][1]);
 
   return sqrt(dist);
-
 }
 
 void DBSCAN::run() {
@@ -201,27 +194,32 @@ void DBSCAN::run() {
 }
 
 void DBSCAN::results() {
+  printf("Number of clusters: %d\n", cluster);
+  int noises = 0;
   for(int x = 1; x <= cluster; x++) {
-    printf("CLuster %d: \n[\n", x);
+    int count = 0;
     for(int i = 0; i < DATASET_SIZE; i++) {
       if(clusters[i] == x) {
-        printf("  [%lf, %lf]\n", dataset[i].x, dataset[i].y);
+        count++;
+      }
+      if(clusters[i] == -1) {
+        noises++;
       }
     }
-    printf("]\n");
+    printf("Cluster %d has %d data\n", x, count);
   }
+  printf("Noises: %d\n", noises);
   
 }
 
 vector<int> DBSCAN::findNeighbors(int pos) {
 
   vector<int> neighbors;
-  Point point = dataset[pos];
   vector<value> result_n;
 
   // Create a search box for the given poiny
-  box searchBox(dataPoint(point.x - elipson, point.y - elipson),
-                dataPoint(point.x + elipson, point.y + elipson));
+  box searchBox(dataPoint(dataset[pos][0] - elipson, dataset[pos][1] - elipson),
+                dataPoint(dataset[pos][0] + elipson, dataset[pos][1] + elipson));
 
   // Query the intersection of search box on Rtree
   rtree.query(bgi::intersects(searchBox), std::back_inserter(result_n));
