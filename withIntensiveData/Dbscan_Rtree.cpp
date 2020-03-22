@@ -4,15 +4,17 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <unordered_set>
 #include <vector>
 
 #include "Rtree.h"
 
-#define DATASET_SIZE 1864620
-// #define DATASET_SIZE 1000
+// #define DATASET_SIZE 1864620
+#define DATASET_SIZE 10000
 #define DIMENTION 2
 #define ELIPSON 1.5
 #define MIN_POINTS 4
@@ -47,7 +49,7 @@ class DBSCAN {
   int cluster;
   long int *clusters;
   long double getDistance(long int center, long int neighbor);
-  vector<long int> findNeighbors(long int pos);
+  unordered_set<long int> findNeighbors(long int pos);
   RTree<long double, long double, 2, double> tree;
 
  public:
@@ -151,7 +153,7 @@ long double DBSCAN::getDistance(long int center, long int neighbor) {
 
 void DBSCAN::run() {
   // Neighbors of the point
-  vector<long int> neighbors;
+  unordered_set<long int> neighbors;
 
   for (long int i = 0; i < DATASET_SIZE; i++) {
     if (clusters[i] == 0) {
@@ -167,28 +169,23 @@ void DBSCAN::run() {
 
         clusters[i] = cluster;
 
-        vector<long int> seedNeighbors = neighbors;
-        remove(seedNeighbors);
+        unordered_set<long int> seedNeighbors = neighbors;
+        seedNeighbors.erase(i);
 
         // Expand the neighbors of point P
-        for (long int j = 0; j < seedNeighbors.size(); j++) {
+        for (long int dataIndex : seedNeighbors) {
           // Mark neighbour as point Q
-          long int dataIndex = seedNeighbors[j];
-
           if (clusters[dataIndex] == -1) {
             clusters[dataIndex] = cluster;
           } else if (clusters[dataIndex] == 0) {
             clusters[dataIndex] = cluster;
 
             // Expand more neighbors of point Q
-            vector<long int> moreNeighbors;
-            moreNeighbors = findNeighbors(dataIndex);
+            neighbors = findNeighbors(dataIndex);
 
-            // Continue when neighbors point is higher than minPoint threshold
-            if (moreNeighbors.size() >= minPoints) {
-              // Check if neighbour of Q already exists in neighbour of P
-              for (long int x = 0; x < moreNeighbors.size(); x++) {
-                seedNeighbors.push_back(moreNeighbors[x]);
+            if (neighbors.size() >= minPoints) {
+              for (long int newNeighbor : neighbors) {
+                seedNeighbors.insert(newNeighbor);
               }
             }
           }
@@ -200,19 +197,19 @@ void DBSCAN::run() {
 
 void DBSCAN::results() {
   printf("Number of clusters: %d\n", cluster);
+
   int noises = 0;
-  for (int x = 1; x <= cluster; x++) {
-    for (int i = 0; i < DATASET_SIZE; i++) {
-      if (clusters[i] == -1) {
-        noises++;
-      }
+  for (int i = 0; i < DATASET_SIZE; i++) {
+    if (clusters[i] == -1) {
+      noises++;
     }
   }
+
   printf("Noises: %d\n", noises);
 }
 
-vector<long int> DBSCAN::findNeighbors(long int pos) {
-  vector<long int> neighbors;
+unordered_set<long int> DBSCAN::findNeighbors(long int pos) {
+  unordered_set<long int> neighbors;
 
   Rect searchRect = Rect(dataset[pos][0] - elipson, dataset[pos][1] - elipson,
                          dataset[pos][0] + elipson, dataset[pos][1] + elipson);
@@ -223,8 +220,8 @@ vector<long int> DBSCAN::findNeighbors(long int pos) {
   for (int x = 0; x < searchNeighbors.size(); x++) {
     // Compute neighbor points of a point at position "pos"
     int distance = getDistance(pos, searchNeighbors[x]);
-    if (distance <= elipson * elipson && pos != searchNeighbors[x]) {
-      neighbors.push_back(searchNeighbors[x]);
+    if (distance <= elipson * elipson) {
+      neighbors.insert(searchNeighbors[x]);
     }
   }
 
