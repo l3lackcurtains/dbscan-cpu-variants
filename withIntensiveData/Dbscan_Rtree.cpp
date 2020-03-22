@@ -1,26 +1,29 @@
-#include <Rtree.h>
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <vector>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fstream>
+#include <unistd.h>
 
-#define DATASET_SIZE 1000000
+#include <algorithm>
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <vector>
+
+#include "Rtree.h"
+
+#define DATASET_SIZE 1864620
 #define DIMENTION 2
-#define ELIPSON 30
-#define MIN_POINTS 10
+#define ELIPSON 1.5
+#define MIN_POINTS 4
 
 using namespace std;
 
 struct Rect {
   Rect() {}
-  int min[2];
-  int max[2];
-  Rect(int a_minX, int a_minY, int a_maxX, int a_maxY) {
+  long double min[2];
+  long double max[2];
+  Rect(long double a_minX, long double a_minY, long double a_maxX,
+       long double a_maxY) {
     min[0] = a_minX;
     min[1] = a_minY;
 
@@ -29,12 +32,7 @@ struct Rect {
   }
 };
 
-struct Cluster {
-  int id;
-  vector<int> data;
-};
-
-vector<int> searchNeighbors;
+vector<long int> searchNeighbors;
 bool searchBoxCallback(int id) {
   searchNeighbors.push_back(id);
   return true;
@@ -42,56 +40,60 @@ bool searchBoxCallback(int id) {
 
 class DBSCAN {
  private:
-  double** dataset;
+  long double **dataset;
   int elipson;
   int minPoints;
   int cluster;
-  int* clusters;
-  int getDistance(int center, int neighbor);
-  vector<int> findNeighbors(int pos);
-  RTree<int, int, 2, float> tree; 
+  long int *clusters;
+  long double getDistance(long int center, long int neighbor);
+  vector<long int> findNeighbors(long int pos);
+  RTree<long double, long double, 2, double> tree;
 
  public:
-  DBSCAN(double ** dataset);
+  DBSCAN(long double **dataset);
   void run();
   void results();
 };
 
-int main(int, char **) {
-  // Generate random datasets
-  double **dataset =
-      (double **)malloc(sizeof(double *) * DATASET_SIZE);
-  for (int i = 0; i < DATASET_SIZE; i++) {
-    dataset[i] = (double *)malloc(sizeof(double) * DIMENTION);
-  }
-
-  // Import Dataset from a file
+void importData(long double **dataset) {
   ifstream file("../dataset/dataset.txt");
   if (file.is_open()) {
     string token;
     int rowCount = 0;
     while (getline(file, token)) {
       int colCount = 0;
-      char* x = (char*)token.c_str();
-      char* field = strtok(x, ",");
-      double tmp;
-      sscanf(field, "%lf", &tmp);
+      char *x = (char *)token.c_str();
+      char *field = strtok(x, ",");
+      long double tmp;
+      sscanf(field, "%llf", &tmp);
       dataset[rowCount][colCount] = tmp;
       while (field) {
         colCount++;
-        if(colCount == DIMENTION) break;
+        if (colCount == DIMENTION) break;
         field = strtok(NULL, ",");
-        if (field!=NULL) {
-          double tmp;
-          sscanf(field,"%lf",&tmp);
+        if (field != NULL) {
+          long double tmp;
+          sscanf(field, "%llf", &tmp);
           dataset[rowCount][colCount] = tmp;
         }
       }
       rowCount++;
-      if(rowCount == DATASET_SIZE) break;
+      if (rowCount == DATASET_SIZE) break;
     }
     file.close();
   }
+}
+
+int main(int, char **) {
+  // Generate random datasets
+  long double **dataset =
+      (long double **)malloc(sizeof(long double *) * DATASET_SIZE);
+  for (int i = 0; i < DATASET_SIZE; i++) {
+    dataset[i] = (long double *)malloc(sizeof(long double) * DIMENTION);
+  }
+
+  // Import Dataset from a file
+  importData(dataset);
 
   // Initialize DBSCAN with dataset
   DBSCAN dbscan(dataset);
@@ -105,45 +107,44 @@ int main(int, char **) {
   return 0;
 }
 
-DBSCAN::DBSCAN(double **loadData) {
-  dataset =
-      (double **)malloc(sizeof(double *) * DATASET_SIZE);
+DBSCAN::DBSCAN(long double **loadData) {
+  dataset = (long double **)malloc(sizeof(long double *) * DATASET_SIZE);
   for (int i = 0; i < DATASET_SIZE; i++) {
-    dataset[i] = (double *)malloc(sizeof(double) * DIMENTION);
+    dataset[i] = (long double *)malloc(sizeof(long double) * DIMENTION);
   }
-  clusters = (int *)malloc(sizeof(int) * DATASET_SIZE);
+
+  clusters = (long int *)malloc(sizeof(long int) * DATASET_SIZE);
+
   elipson = ELIPSON;
   minPoints = MIN_POINTS;
   cluster = 0;
 
-  for (int i = 0; i < DATASET_SIZE; i++) {
+  for (long int i = 0; i < DATASET_SIZE; i++) {
     dataset[i][0] = loadData[i][0];
     dataset[i][1] = loadData[i][1];
     clusters[i] = 0;
 
     // Insert Data into tree
-    Rect rectange = Rect(dataset[i][0], dataset[i][1], dataset[i][0], dataset[i][1]);
+    Rect rectange =
+        Rect(dataset[i][0], dataset[i][1], dataset[i][0], dataset[i][1]);
     tree.Insert(rectange.min, rectange.max, i);
   }
 }
 
-int DBSCAN::getDistance(int center, int neighbor) {
-  int dist = (dataset[center][0] - dataset[neighbor][0]) *
-                 (dataset[center][0] - dataset[neighbor][0]) +
-             (dataset[center][1] - dataset[neighbor][1]) *
-                 (dataset[center][1] - dataset[neighbor][1]);
-
-  return sqrt(dist);
+long double DBSCAN::getDistance(long int center, long int neighbor) {
+  long double dist = (dataset[center][0] - dataset[neighbor][0]) *
+                         (dataset[center][0] - dataset[neighbor][0]) +
+                     (dataset[center][1] - dataset[neighbor][1]) *
+                         (dataset[center][1] - dataset[neighbor][1]);
+  return dist;
 }
 
 void DBSCAN::run() {
   // Neighbors of the point
-  vector<int> neighbors;
+  vector<long int> neighbors;
 
-  for (int i = 0; i < DATASET_SIZE; i++) {
-    
+  for (long int i = 0; i < DATASET_SIZE; i++) {
     if (clusters[i] == 0) {
-
       // Find neighbors of point P
       neighbors = findNeighbors(i);
 
@@ -154,71 +155,59 @@ void DBSCAN::run() {
         // Increment cluster and initialize it will the current point
         cluster++;
 
-        clusters[i] = cluster; 
+        clusters[i] = cluster;
 
         // Expand the neighbors of point P
-        for (int j = 0; j < neighbors.size(); j++) {
-
+        for (long int j = 0; j < neighbors.size(); j++) {
           // Mark neighbour as point Q
-          int dataIndex = neighbors[j];
+          long int dataIndex = neighbors[j];
 
-          if(clusters[dataIndex] == -1) {
+          if (clusters[dataIndex] == -1) {
             clusters[dataIndex] = cluster;
           } else if (clusters[dataIndex] == 0) {
-
             clusters[dataIndex] = cluster;
-            
+
             // Expand more neighbors of point Q
-            vector<int> moreNeighbors;
+            vector<long int> moreNeighbors;
             moreNeighbors = findNeighbors(dataIndex);
 
             // Continue when neighbors point is higher than minPoint threshold
-
             if (moreNeighbors.size() >= minPoints) {
               // Check if neighbour of Q already exists in neighbour of P
-              for (int x = 0; x < moreNeighbors.size(); x++) {
-                bool doesntExist = true;
-                for (int y = 0; y < neighbors.size(); y++) {
-                  if (moreNeighbors[x] == neighbors[y]) {
-                    doesntExist = false;
-                    break;
-                  }
-                }
-
-                // If neighbour doesn't exist, add to neighbor list
-                if (doesntExist) {
+              for (long int x = 0; x < moreNeighbors.size(); x++) {
+                if (find(neighbors.begin(), neighbors.end(),
+                         moreNeighbors[x]) == neighbors.end()) {
                   neighbors.push_back(moreNeighbors[x]);
                 }
               }
             }
-          }         
+          }
+        }
       }
     }
   }
-}
 }
 
 void DBSCAN::results() {
   printf("Number of clusters: %d\n", cluster);
   int noises = 0;
-  for(int x = 1; x <= cluster; x++) {
+  for (int x = 1; x <= cluster; x++) {
     int count = 0;
-    for(int i = 0; i < DATASET_SIZE; i++) {
-      if(clusters[i] == x) {
+    for (int i = 0; i < DATASET_SIZE; i++) {
+      if (clusters[i] == x) {
         count++;
       }
-      if(clusters[i] == -1) {
+      if (clusters[i] == -1) {
         noises++;
       }
     }
     printf("Cluster %d has %d data\n", x, count);
   }
   printf("Noises: %d\n", noises);
-  
 }
 
-vector<int> DBSCAN::findNeighbors(int pos) {
-  vector<int> neighbors;
+vector<long int> DBSCAN::findNeighbors(long int pos) {
+  vector<long int> neighbors;
 
   Rect searchRect = Rect(dataset[pos][0] - elipson, dataset[pos][1] - elipson,
                          dataset[pos][0] + elipson, dataset[pos][1] + elipson);
@@ -229,7 +218,7 @@ vector<int> DBSCAN::findNeighbors(int pos) {
   for (int x = 0; x < searchNeighbors.size(); x++) {
     // Compute neighbor points of a point at position "pos"
     int distance = getDistance(pos, searchNeighbors[x]);
-    if (distance <= elipson && pos != searchNeighbors[x]) {
+    if (distance <= elipson * elipson && pos != searchNeighbors[x]) {
       neighbors.push_back(searchNeighbors[x]);
     }
   }

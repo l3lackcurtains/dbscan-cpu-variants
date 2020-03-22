@@ -4,9 +4,9 @@ from sklearn.cluster import DBSCAN
 
 data = pd.read_csv('../dataset/dataset.txt', sep=",", header=None).to_numpy()
 
-X = data[:1000000]
+X = data[:10000]
 
-db = DBSCAN(eps=30, min_samples=10).fit(X)
+db = DBSCAN(eps=1.5, min_samples=4).fit(X)
 cls_labels = db.labels_
 
 max_clusters = max(cls_labels) + 1
@@ -26,4 +26,6 @@ for j in range(0, len(cls_labels)):
 
 print("Number of clusters: ", max_clusters)
 for i in range(0, max_clusters):
-    print("Cluster", i, "has", len(clusters[i]), "data" )
+    print("Cluster", i + 1, "has", len(clusters[i]), "data")
+
+print("Noises:", len(noises))
