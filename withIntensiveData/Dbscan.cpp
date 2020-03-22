@@ -172,16 +172,11 @@ void DBSCAN::results() {
   printf("Number of clusters: %d\n", cluster);
   int noises = 0;
   for (int x = 1; x <= cluster; x++) {
-    int count = 0;
-    for (long int i = 0; i < DATASET_SIZE; i++) {
-      if (clusters[i] == x) {
-        count++;
-      }
+    for (int i = 0; i < DATASET_SIZE; i++) {
       if (clusters[i] == -1) {
         noises++;
       }
     }
-    printf("Cluster %d has %d data\n", x, count);
   }
   printf("Noises: %d\n", noises);
 }

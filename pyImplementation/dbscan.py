@@ -25,7 +25,4 @@ for j in range(0, len(cls_labels)):
 
 
 print("Number of clusters: ", max_clusters)
-for i in range(0, max_clusters):
-    print("Cluster", i + 1, "has", len(clusters[i]), "data")
-
 print("Noises:", len(noises))
