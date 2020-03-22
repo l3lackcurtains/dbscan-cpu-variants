@@ -11,7 +11,7 @@
 
 #include "Rtree.h"
 
-#define DATASET_SIZE 1864620
+#define DATASET_SIZE 10000
 #define DIMENTION 2
 #define ELIPSON 1.5
 #define MIN_POINTS 4
@@ -55,6 +55,15 @@ class DBSCAN {
   void results();
 };
 
+void remove(std::vector<long int> &v) {
+  auto end = v.end();
+  for (auto it = v.begin(); it != end; ++it) {
+    end = std::remove(it + 1, end, *it);
+  }
+
+  v.erase(end, v.end());
+}
+
 void importData(long double **dataset) {
   ifstream file("../dataset/dataset.txt");
   if (file.is_open()) {
@@ -65,7 +74,7 @@ void importData(long double **dataset) {
       char *x = (char *)token.c_str();
       char *field = strtok(x, ",");
       long double tmp;
-      sscanf(field, "%llf", &tmp);
+      sscanf(field, "%Lf", &tmp);
       dataset[rowCount][colCount] = tmp;
       while (field) {
         colCount++;
@@ -73,7 +82,7 @@ void importData(long double **dataset) {
         field = strtok(NULL, ",");
         if (field != NULL) {
           long double tmp;
-          sscanf(field, "%llf", &tmp);
+          sscanf(field, "%Lf", &tmp);
           dataset[rowCount][colCount] = tmp;
         }
       }
@@ -157,10 +166,13 @@ void DBSCAN::run() {
 
         clusters[i] = cluster;
 
+        vector<long int> seedNeighbors = neighbors;
+        remove(seedNeighbors);
+
         // Expand the neighbors of point P
-        for (long int j = 0; j < neighbors.size(); j++) {
+        for (long int j = 0; j < seedNeighbors.size(); j++) {
           // Mark neighbour as point Q
-          long int dataIndex = neighbors[j];
+          long int dataIndex = seedNeighbors[j];
 
           if (clusters[dataIndex] == -1) {
             clusters[dataIndex] = cluster;
@@ -175,10 +187,7 @@ void DBSCAN::run() {
             if (moreNeighbors.size() >= minPoints) {
               // Check if neighbour of Q already exists in neighbour of P
               for (long int x = 0; x < moreNeighbors.size(); x++) {
-                if (find(neighbors.begin(), neighbors.end(),
-                         moreNeighbors[x]) == neighbors.end()) {
-                  neighbors.push_back(moreNeighbors[x]);
-                }
+                seedNeighbors.push_back(moreNeighbors[x]);
               }
             }
           }

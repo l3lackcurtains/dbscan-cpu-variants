@@ -4,7 +4,7 @@ from sklearn.cluster import DBSCAN
 
 data = pd.read_csv('../dataset/dataset.txt', sep=",", header=None).to_numpy()
 
-X = data[:10000]
+X = data[:100000]
 
 db = DBSCAN(eps=1.5, min_samples=4).fit(X)
 cls_labels = db.labels_
