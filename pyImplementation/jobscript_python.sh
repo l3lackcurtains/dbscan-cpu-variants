@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#SBATCH -C sb
 #SBATCH --job-name=dbscan_py
 #SBATCH --output=/scratch/mp2525/dbscan_py.txt
 #SBATCH --error=/scratch/mp2525/dbscan_py.err

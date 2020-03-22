@@ -8,13 +8,13 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 #include "Rtree.h"
 
-// #define DATASET_SIZE 1864620
-#define DATASET_SIZE 10000
+#define DATASET_SIZE 1864620
+// #define DATASET_SIZE 10000
 #define DIMENTION 2
 #define ELIPSON 1.5
 #define MIN_POINTS 4
@@ -49,7 +49,7 @@ class DBSCAN {
   int cluster;
   long int *clusters;
   long double getDistance(long int center, long int neighbor);
-  unordered_set<long int> findNeighbors(long int pos);
+  set<long int> findNeighbors(long int pos);
   RTree<long double, long double, 2, double> tree;
 
  public:
@@ -67,33 +67,41 @@ void remove(vector<long int> &v) {
   v.erase(end, v.end());
 }
 
-void importData(long double **dataset) {
-  ifstream file("../dataset/dataset.txt");
-  if (file.is_open()) {
-    string token;
-    int rowCount = 0;
-    while (getline(file, token)) {
-      int colCount = 0;
-      char *x = (char *)token.c_str();
-      char *field = strtok(x, ",");
-      long double tmp;
-      sscanf(field, "%Lf", &tmp);
-      dataset[rowCount][colCount] = tmp;
-      while (field) {
-        colCount++;
-        if (colCount == DIMENTION) break;
-        field = strtok(NULL, ",");
-        if (field != NULL) {
-          long double tmp;
-          sscanf(field, "%Lf", &tmp);
-          dataset[rowCount][colCount] = tmp;
-        }
-      }
-      rowCount++;
-      if (rowCount == DATASET_SIZE) break;
-    }
-    file.close();
+int importDataset(char const *fname, int N, long double **dataset) {
+  FILE *fp = fopen(fname, "r");
+
+  if (!fp) {
+    printf("Unable to open file\n");
+    return (1);
   }
+
+  char buf[4096];
+  int rowCnt = 0;
+  int colCnt = 0;
+  while (fgets(buf, 4096, fp) && rowCnt < N) {
+    colCnt = 0;
+
+    char *field = strtok(buf, ",");
+    long double tmp;
+    sscanf(field, "%Lf", &tmp);
+    dataset[rowCnt][colCnt] = tmp;
+
+    while (field) {
+      colCnt++;
+      field = strtok(NULL, ",");
+
+      if (field != NULL) {
+        long double tmp;
+        sscanf(field, "%Lf", &tmp);
+        dataset[rowCnt][colCnt] = tmp;
+      }
+    }
+    rowCnt++;
+  }
+
+  fclose(fp);
+
+  return 0;
 }
 
 int main(int, char **) {
@@ -105,7 +113,7 @@ int main(int, char **) {
   }
 
   // Import Dataset from a file
-  importData(dataset);
+  importDataset("../dataset/dataset.txt", DATASET_SIZE, dataset);
 
   // Initialize DBSCAN with dataset
   DBSCAN dbscan(dataset);
@@ -153,7 +161,7 @@ long double DBSCAN::getDistance(long int center, long int neighbor) {
 
 void DBSCAN::run() {
   // Neighbors of the point
-  unordered_set<long int> neighbors;
+  set<long int> neighbors;
 
   for (long int i = 0; i < DATASET_SIZE; i++) {
     if (clusters[i] == 0) {
@@ -169,8 +177,7 @@ void DBSCAN::run() {
 
         clusters[i] = cluster;
 
-        unordered_set<long int> seedNeighbors = neighbors;
-        seedNeighbors.erase(i);
+        set<long int> seedNeighbors = neighbors;
 
         // Expand the neighbors of point P
         for (long int dataIndex : seedNeighbors) {
@@ -208,8 +215,8 @@ void DBSCAN::results() {
   printf("Noises: %d\n", noises);
 }
 
-unordered_set<long int> DBSCAN::findNeighbors(long int pos) {
-  unordered_set<long int> neighbors;
+set<long int> DBSCAN::findNeighbors(long int pos) {
+  set<long int> neighbors;
 
   Rect searchRect = Rect(dataset[pos][0] - elipson, dataset[pos][1] - elipson,
                          dataset[pos][0] + elipson, dataset[pos][1] + elipson);
@@ -220,7 +227,7 @@ unordered_set<long int> DBSCAN::findNeighbors(long int pos) {
   for (int x = 0; x < searchNeighbors.size(); x++) {
     // Compute neighbor points of a point at position "pos"
     int distance = getDistance(pos, searchNeighbors[x]);
-    if (distance <= elipson * elipson) {
+    if (distance <= elipson * elipson && searchNeighbors[x] != pos) {
       neighbors.insert(searchNeighbors[x]);
     }
   }

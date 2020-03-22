@@ -8,7 +8,6 @@
 #include <fstream>
 #include <iostream>
 #include <set>
-#include <unordered_set>
 #include <vector>
 
 #define DATASET_SIZE 1864620
@@ -26,7 +25,7 @@ class DBSCAN {
   int cluster;
   long int *clusters;
   long double getDistance(long int center, long int neighbor);
-  unordered_set<long int> findNeighbors(long int pos);
+  set<long int> findNeighbors(long int pos);
 
  public:
   DBSCAN(long double **loadData);
@@ -132,7 +131,7 @@ long double DBSCAN::getDistance(long int center, long int neighbor) {
 
 void DBSCAN::run() {
   // Neighbors of the point
-  unordered_set<long int> neighbors;
+  set<long int> neighbors;
 
   for (long int i = 0; i < DATASET_SIZE; i++) {
     if (clusters[i] == 0) {
@@ -148,8 +147,7 @@ void DBSCAN::run() {
 
         clusters[i] = cluster;
 
-        unordered_set<long int> seedNeighbors = neighbors;
-        seedNeighbors.erase(i);
+        set<long int> seedNeighbors = neighbors;
 
         // Expand the neighbors of point P
         for (long int dataIndex : seedNeighbors) {
@@ -186,12 +184,12 @@ void DBSCAN::results() {
   printf("Noises: %d\n", noises);
 }
 
-unordered_set<long int> DBSCAN::findNeighbors(long int pos) {
-  unordered_set<long int> neighbors;
+set<long int> DBSCAN::findNeighbors(long int pos) {
+  set<long int> neighbors;
   for (long int x = 0; x < DATASET_SIZE; x++) {
     // Compute neighbor points of a point at position "pos"
     long double distance = getDistance(pos, x);
-    if (distance < elipson * elipson) {
+    if (distance < elipson * elipson && x != pos) {
       neighbors.insert(x);
     }
   }
