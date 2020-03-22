@@ -11,7 +11,8 @@
 
 #include "Rtree.h"
 
-#define DATASET_SIZE 10000
+#define DATASET_SIZE 1864620
+// #define DATASET_SIZE 1000
 #define DIMENTION 2
 #define ELIPSON 1.5
 #define MIN_POINTS 4
@@ -55,7 +56,7 @@ class DBSCAN {
   void results();
 };
 
-void remove(std::vector<long int> &v) {
+void remove(vector<long int> &v) {
   auto end = v.end();
   for (auto it = v.begin(); it != end; ++it) {
     end = std::remove(it + 1, end, *it);

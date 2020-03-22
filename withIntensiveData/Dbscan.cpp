@@ -9,7 +9,8 @@
 #include <iostream>
 #include <vector>
 
-#define DATASET_SIZE 10000
+#define DATASET_SIZE 1864620
+// #define DATASET_SIZE 1000
 #define DIMENTION 2
 #define ELIPSON 1.5
 #define MIN_POINTS 4
@@ -30,6 +31,15 @@ class DBSCAN {
   void run();
   void results();
 };
+
+void remove(vector<long int> &v) {
+  auto end = v.end();
+  for (auto it = v.begin(); it != end; ++it) {
+    end = std::remove(it + 1, end, *it);
+  }
+
+  v.erase(end, v.end());
+}
 
 int main(int, char **) {
   // Generate random datasets
@@ -127,10 +137,13 @@ void DBSCAN::run() {
 
         clusters[i] = cluster;
 
+        vector<long int> seedNeighbors = neighbors;
+        remove(seedNeighbors);
+
         // Expand the neighbors of point P
-        for (long int j = 0; j < neighbors.size(); j++) {
+        for (long int j = 0; j < seedNeighbors.size(); j++) {
           // Mark neighbour as point Q
-          long int dataIndex = neighbors[j];
+          long int dataIndex = seedNeighbors[j];
 
           if (clusters[dataIndex] == -1) {
             clusters[dataIndex] = cluster;
@@ -142,15 +155,10 @@ void DBSCAN::run() {
             moreNeighbors = findNeighbors(dataIndex);
 
             // Continue when neighbors point is higher than minPoint threshold
-
-            // Continue when neighbors point is higher than minPoint threshold
             if (moreNeighbors.size() >= minPoints) {
               // Check if neighbour of Q already exists in neighbour of P
               for (long int x = 0; x < moreNeighbors.size(); x++) {
-                if (find(neighbors.begin(), neighbors.end(),
-                         moreNeighbors[x]) == neighbors.end()) {
-                  neighbors.push_back(moreNeighbors[x]);
-                }
+                seedNeighbors.push_back(moreNeighbors[x]);
               }
             }
           }
