@@ -13,8 +13,8 @@
 
 #include "Rtree.h"
 
-#define DATASET_SIZE 1864620
-// #define DATASET_SIZE 10000
+// #define DATASET_SIZE 1864620
+#define DATASET_SIZE 20000
 #define DIMENTION 2
 #define ELIPSON 1.5
 #define MIN_POINTS 4
@@ -178,7 +178,7 @@ void DBSCAN::run() {
         clusters[i] = cluster;
 
         set<long int> seedNeighbors = neighbors;
-
+        seedNeighbors.erase(i);
         // Expand the neighbors of point P
         for (long int dataIndex : seedNeighbors) {
           // Mark neighbour as point Q
@@ -227,7 +227,7 @@ set<long int> DBSCAN::findNeighbors(long int pos) {
   for (int x = 0; x < searchNeighbors.size(); x++) {
     // Compute neighbor points of a point at position "pos"
     int distance = getDistance(pos, searchNeighbors[x]);
-    if (distance <= elipson * elipson && searchNeighbors[x] != pos) {
+    if (distance <= elipson * elipson) {
       neighbors.insert(searchNeighbors[x]);
     }
   }
