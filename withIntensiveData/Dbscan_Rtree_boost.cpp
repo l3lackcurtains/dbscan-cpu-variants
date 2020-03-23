@@ -13,7 +13,7 @@
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
-#define DATASET_SIZE 1000000
+// #define DATASET_SIZE 1000000
 #define DIMENTION 2
 #define ELIPSON 30
 #define MIN_POINTS 10

@@ -12,7 +12,8 @@
 
 #include "Rtree.h"
 
-#define DATASET_SIZE 10000
+#define DATASET_SIZE 1864620
+// #define DATASET_SIZE 10000
 #define DIMENTION 2
 #define ELIPSON 1.5
 #define MIN_POINTS 4
