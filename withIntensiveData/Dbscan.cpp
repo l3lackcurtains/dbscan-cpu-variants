@@ -58,7 +58,7 @@ int importDataset(char const *fname, int N, long double **dataset) {
 class DBSCAN {
  private:
   long double **dataset;
-  int elipson;
+  double elipson;
   int minPoints;
   int cluster;
   long int *clusters;

@@ -1,13 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
-#include <algorithm>
-#include <cmath>
 #include <fstream>
 #include <iostream>
-#include <set>
 #include <vector>
 
 #include "Rtree.h"
@@ -22,9 +18,10 @@ using namespace std;
 
 struct Rect {
   Rect() {}
-  int min[2];
-  int max[2];
-  Rect(int a_minX, int a_minY, int a_maxX, int a_maxY) {
+  long double min[2];
+  long double max[2];
+  Rect(long double a_minX, long double a_minY, long double a_maxX,
+       long double a_maxY) {
     min[0] = a_minX;
     min[1] = a_minY;
 
@@ -79,13 +76,13 @@ int importDataset(char const *fname, int N, long double **dataset) {
 class DBSCAN {
  private:
   long double **dataset;
-  int elipson;
+  double elipson;
   int minPoints;
   int cluster;
-  long int *clusters;
-  long double getDistance(long int center, long int neighbor);
+  int *clusters;
+  long double getDistance(int center, int neighbor);
   vector<int> findNeighbors(int pos);
-  RTree<int, int, 2, float> tree;
+  RTree<long double, long double, 2, long double> tree;
 
  public:
   DBSCAN(long double **loadData);
@@ -98,7 +95,7 @@ int main(int, char **) {
   // Generate random datasets
   long double **dataset =
       (long double **)malloc(sizeof(long double *) * DATASET_SIZE);
-  for (long int i = 0; i < DATASET_SIZE; i++) {
+  for (int i = 0; i < DATASET_SIZE; i++) {
     dataset[i] = (long double *)malloc(sizeof(long double) * DIMENTION);
   }
 
@@ -113,7 +110,7 @@ int main(int, char **) {
   // Print the cluster results of DBSCAN
   dbscan.results();
 
-  for (long int i = 0; i < DATASET_SIZE; i++) {
+  for (int i = 0; i < DATASET_SIZE; i++) {
     free(dataset[i]);
   }
   free(dataset);
@@ -122,10 +119,10 @@ int main(int, char **) {
 }
 
 DBSCAN::DBSCAN(long double **loadData) {
-  clusters = (long int *)malloc(sizeof(long int) * DATASET_SIZE);
+  clusters = (int *)malloc(sizeof(int) * DATASET_SIZE);
 
   dataset = (long double **)malloc(sizeof(long double *) * DATASET_SIZE);
-  for (long int i = 0; i < DATASET_SIZE; i++) {
+  for (int i = 0; i < DATASET_SIZE; i++) {
     dataset[i] = (long double *)malloc(sizeof(long double) * DIMENTION);
   }
 
@@ -146,14 +143,14 @@ DBSCAN::DBSCAN(long double **loadData) {
 }
 
 DBSCAN::~DBSCAN() {
-  for (long int i = 0; i < DATASET_SIZE; i++) {
+  for (int i = 0; i < DATASET_SIZE; i++) {
     free(dataset[i]);
   }
   free(clusters);
   free(dataset);
 }
 
-long double DBSCAN::getDistance(long int center, long int neighbor) {
+long double DBSCAN::getDistance(int center, int neighbor) {
   long double dist = (dataset[center][0] - dataset[neighbor][0]) *
                          (dataset[center][0] - dataset[neighbor][0]) +
                      (dataset[center][1] - dataset[neighbor][1]) *
@@ -164,45 +161,46 @@ long double DBSCAN::getDistance(long int center, long int neighbor) {
 
 void DBSCAN::run() {
   // Neighbors of the point
-  vector<int> neighbors;
 
   for (int i = 0; i < DATASET_SIZE; i++) {
-    if (clusters[i] == 0) {
-      // Find neighbors of point P
-      neighbors = findNeighbors(i);
+    if (clusters[i] != 0) continue;
+    vector<int> neighbors;
+    // Find neighbors of point P
+    neighbors = findNeighbors(i);
 
-      // Mark noise points
-      if (neighbors.size() < minPoints) {
-        clusters[i] = -1;
-      } else {
-        // Increment cluster and initialize it will the current point
-        cluster++;
+    // Mark noise points
+    if (neighbors.size() < minPoints) {
+      clusters[i] = -1;
+      continue;
+    }
+    cluster++;
+    // Increment cluster and initialize it will the current point
+    clusters[i] = cluster;
 
-        clusters[i] = cluster;
-        // Expand the neighbors of point P
-        for (int j = 0; j < neighbors.size(); j++) {
-          // Mark neighbour as point Q
-          int dataIndex = neighbors[j];
+    // Expand the neighbors of point P
+    for (int j = 0; j < neighbors.size(); j++) {
+      // Mark neighbour as point Q
+      int dataIndex = neighbors[j];
 
-          if (dataIndex == i) continue;
+      if (dataIndex == i) continue;
 
-          if (clusters[dataIndex] == -1) {
-            clusters[dataIndex] = cluster;
-          } else if (clusters[dataIndex] == 0) {
-            clusters[dataIndex] = cluster;
+      if (clusters[dataIndex] == -1) {
+        clusters[dataIndex] = cluster;
+        continue;
+      }
+      if (clusters[dataIndex] != 0) continue;
 
-            // Expand more neighbors of point Q
-            vector<int> moreNeighbors;
-            moreNeighbors = findNeighbors(dataIndex);
+      clusters[dataIndex] = cluster;
 
-            // Continue when neighbors point is higher than minPoint threshold
-            if (moreNeighbors.size() >= minPoints) {
-              // Check if neighbour of Q already exists in neighbour of P
-              for (int x = 0; x < moreNeighbors.size(); x++) {
-                neighbors.push_back(moreNeighbors[x]);
-              }
-            }
-          }
+      // Expand more neighbors of point Q
+      vector<int> moreNeighbors;
+      moreNeighbors = findNeighbors(dataIndex);
+
+      // Continue when neighbors point is higher than minPoint threshold
+      if (moreNeighbors.size() >= minPoints) {
+        // Check if neighbour of Q already exists in neighbour of P
+        for (int x = 0; x < moreNeighbors.size(); x++) {
+          neighbors.push_back(moreNeighbors[x]);
         }
       }
     }
